@@ -1,19 +1,20 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Send } from 'lucide-react';
-import ReactMarkdown from 'react-markdown';
+import React, { useState, useRef, useEffect } from "react";
+import { Send } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import { env } from "../config/env";
 
 interface Message {
-  role: 'user' | 'assistant';
+  role: "user" | "assistant";
   content: string;
 }
 
 export default function Chat() {
   const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState('');
+  const [input, setInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   useEffect(() => {
@@ -24,16 +25,44 @@ export default function Chat() {
     e.preventDefault();
     if (!input.trim()) return;
 
-    const newMessage: Message = { role: 'user', content: input };
-    setMessages((prev) => [...prev, newMessage]);
-    setInput('');
+    const newMessage: Message = { role: "user", content: input };
+    setMessages((prev) => [
+      ...prev,
+      newMessage,
+      { role: "assistant", content: "" },
+    ]);
+    setInput("");
 
-    // TODO: Implement actual API call to OpenAI
-    const response: Message = {
-      role: 'assistant',
-      content: 'This is a placeholder response. Implement OpenAI API integration.',
-    };
-    setMessages((prev) => [...prev, response]);
+    const response = await fetch(`${env.apiUrl}/chat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ question: input }),
+    });
+
+    if (!response.body) return;
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      const decodeValue = decoder.decode(value);
+      if (!decodeValue) continue;
+
+      console.log("Received chunk:", decodeValue); // Log each chunk
+
+      setMessages((prev) => [
+        ...prev.slice(0, prev.length - 1),
+        {
+          role: "assistant",
+          content: `${prev[prev.length - 1].content}${decodeValue}`,
+        },
+      ]);
+    }
+
+    console.log("All chunks received and written."); // Log when all chunks are processed
   };
 
   return (
@@ -43,14 +72,14 @@ export default function Chat() {
           <div
             key={index}
             className={`flex ${
-              message.role === 'user' ? 'justify-end' : 'justify-start'
+              message.role === "user" ? "justify-end" : "justify-start"
             }`}
           >
             <div
               className={`max-w-[80%] rounded-lg p-4 ${
-                message.role === 'user'
-                  ? 'bg-indigo-600 text-white'
-                  : 'bg-white text-gray-900'
+                message.role === "user"
+                  ? "bg-indigo-600 text-white"
+                  : "bg-white text-gray-900"
               }`}
             >
               <ReactMarkdown>{message.content}</ReactMarkdown>
@@ -59,7 +88,7 @@ export default function Chat() {
         ))}
         <div ref={messagesEndRef} />
       </div>
-      
+
       <form onSubmit={handleSubmit} className="p-4 bg-white border-t">
         <div className="flex space-x-4">
           <input

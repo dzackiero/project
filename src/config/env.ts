@@ -3,6 +3,7 @@ interface EnvConfig {
     url: string;
     anonKey: string;
   };
+  apiUrl: string;
 }
 
 export const env: EnvConfig = {
@@ -10,4 +11,5 @@ export const env: EnvConfig = {
     url: import.meta.env.VITE_SUPABASE_URL,
     anonKey: import.meta.env.VITE_SUPABASE_ANON_KEY,
   },
+  apiUrl: import.meta.env.VITE_API_URL,
 };
