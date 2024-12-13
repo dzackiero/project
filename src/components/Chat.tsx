@@ -50,14 +50,13 @@ export default function Chat() {
 
       const decodeValue = decoder.decode(value);
       if (!decodeValue) continue;
-
-      console.log("Received chunk:", decodeValue); // Log each chunk
+      const jsonValue = JSON.parse(decodeValue) as { response: string };
 
       setMessages((prev) => [
         ...prev.slice(0, prev.length - 1),
         {
           role: "assistant",
-          content: `${prev[prev.length - 1].content}${decodeValue}`,
+          content: `${prev[prev.length - 1].content}${jsonValue.response}`,
         },
       ]);
     }
